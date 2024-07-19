@@ -467,10 +467,12 @@ static inline ssize_t ff_getMyCpu() { return ff_getMyCore(); }
  */
 static inline ssize_t ff_mapThreadToCpu(int cpu_id, int priority_level=0) {
 #if defined(__linux__) && defined(CPU_SET)
-    cpu_set_t mask;
+    cpu_set_t mask, old_mask;
     CPU_ZERO(&mask);
     CPU_SET(cpu_id, &mask);
-    if (sched_setaffinity(ff_gettid(), sizeof(mask), &mask) != 0) 
+    sched_getaffinity(ff_gettid(), sizeof(cpu_set_t), &old_mask);
+    if(CPU_COUNT(&old_mask) == sysconf(_SC_NPROCESSORS_ONLN))
+      if (sched_setaffinity(ff_gettid(), sizeof(mask), &mask) != 0) 
         return EINVAL;
     return (ff_setPriority(priority_level));
 #elif defined(__APPLE__) && MAC_OS_X_HAS_AFFINITY
