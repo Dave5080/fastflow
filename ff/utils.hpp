@@ -62,6 +62,12 @@ enum { START_TIME=0, STOP_TIME=1, GET_TIME=2 };
  *       - test on Apple
  */
 #if defined(__linux__)
+static inline std::string get_env(std::string const& env_name){
+  char* res = std::getenv(env_name.c_str());
+  if(res) return res;
+  return "";
+}
+
 /*!!!----Mehdi-- required for DSRIMANAGER NODE----!!*/
 static inline void waitCall(double milisec, double sec){
   if(milisec!=0.0 || sec!=0.0){

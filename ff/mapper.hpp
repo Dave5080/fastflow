@@ -32,11 +32,13 @@
  */
 
 #include <stdlib.h>
+#include <cstdlib>
 #include <ff/config.hpp>
 #include <ff/svector.hpp>
 #include <ff/utils.hpp>
 #include <ff/mapping_utils.hpp>
 #include <vector>
+#include <ff/affinity/parser.h>
 #if defined(MAMMUT)
 #include <mammut/mammut.hpp>
 #endif
@@ -153,7 +155,7 @@ public:
             }
         }
 #endif /* MAMMUT */
-
+    
         mask = size - 1;
 		rrcnt = 0;
         /*
@@ -163,7 +165,14 @@ public:
           }
           printf("\n");
         */
+    std::string aff_str = ff::get_env("FF_AFFINITY");
+    Lexer lex(aff_str.c_str());
+    Parser p(lex);
+    std::optional<FF_AFF_SETS> res = p.parse();
+    if(res) aff_set = *res;
+    else aff_err = true;
 
+    
 
 #if 0
 		const int max_supported_platforms = 10;
@@ -280,6 +289,13 @@ public:
 		CList = List;
 	}
 
+  int setMappingList(){
+    if(!aff_err){
+        setMappingList(aff_set.begin()->second);
+      return 1;
+    }
+    else return -1;
+  }
     
 	/**
 	 *  Returns the next CPU id using a round-robin mapping access on the mapping list. 
@@ -376,6 +392,8 @@ protected:
 	unsigned int mask;
 	unsigned int num_cores;
 	svector<int> CList;
+  FF_AFF_SETS aff_set;
+  bool aff_err = false;
 #if 0
 	svector<cl_device_id> ocl_cpus, ocl_gpus, ocl_accelerators;
 	std::atomic<unsigned int> ocl_cpu_id, ocl_gpu_id, ocl_accelerator_id;
