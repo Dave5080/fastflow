@@ -172,6 +172,8 @@ public:
     if(res) aff_set = *res;
     else aff_err = true;
 
+    it_aff = aff_set.begin();
+
     
 
 #if 0
@@ -296,6 +298,17 @@ public:
     }
     else return -1;
   }
+  int setMappingSet(std::string s){
+    if(aff_err) return -1;
+    if(aff_set.find(s) != aff_set.end()) return -1;
+    setMappingList(aff_set[s]);
+    return 1;
+  }
+
+  FF_AFF_SETS::iterator get_aff_it(){
+    if(it_aff == aff_set.end()) it_aff = aff_set.begin();
+    return it_aff;
+  }
     
 	/**
 	 *  Returns the next CPU id using a round-robin mapping access on the mapping list. 
@@ -394,6 +407,7 @@ protected:
 	svector<int> CList;
   FF_AFF_SETS aff_set;
   bool aff_err = false;
+  FF_AFF_SETS::iterator it_aff;
 #if 0
 	svector<cl_device_id> ocl_cpus, ocl_gpus, ocl_accelerators;
 	std::atomic<unsigned int> ocl_cpu_id, ocl_gpu_id, ocl_accelerator_id;

@@ -165,7 +165,7 @@ static inline int init_thread_affinity(pthread_attr_t*attr, int cpuId) {
  */
 static inline int init_thread_affinity(pthread_attr_t*,int) {
     // Ensure that the threadMapper constructor is called
-    threadMapper::instance();
+    threadMapper::instance().setMappingSet(threadMapper.instance().get_aff_it().next()->first);
     return -1;
 }
 #else
