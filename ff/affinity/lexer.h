@@ -1,6 +1,7 @@
 #include <string>
 #include <string_view>
 #include <charconv>
+#include <cstdio>
 #include <vector>
 #include <iostream>
 #include <optional>
@@ -79,7 +80,9 @@ class Token {
 
 class Lexer {
   public:
-    Lexer(const char* beg) noexcept : m_beg(beg) {}
+    Lexer(const char* beg) noexcept : m_beg(beg) {
+      std::cout << "STR: " << beg << std::endl;
+    }
     Token next() noexcept;
     std::vector<Token> next(unsigned int k) noexcept;
     Token peek() noexcept;

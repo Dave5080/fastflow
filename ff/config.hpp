@@ -80,11 +80,8 @@
  * NOTE: if FF_MAPPING_STRING is "" (default), FastFlow executes a linear
  *       mapping of threads. 
  */
-#if !defined MAPPING_STRING
+#define NO_DEFAULT_MAPPING
 #define FF_MAPPING_STRING ""
-#else
-#define FF_MAPPING_STRING MAPPING_STRING
-#endif
 /* 
  * It is the number of the logical cores of the machine.
  * NOTE: if FF_NUM_CORES is -1 (default), FastFlow will use ff_numCores()
@@ -95,6 +92,11 @@
 #else
 #define FF_NUM_CORES NUM_CORES
 #endif
+
+
+
+#define DEBUG_AFFINITY 1
+
 /* 
  * It is the number of the physical cores of the machine.
  * NOTE: if FF_NUM_REAL_CORES is -1 (default), FastFlow will use 

@@ -30,7 +30,7 @@
 
 #ifndef FF_UTILS_HPP
 #define FF_UTILS_HPP
-
+#include <iostream>
 #include <assert.h>
 #include <cstdio>
 #include <cstdlib>
@@ -52,6 +52,7 @@
 
 #include <ff/cycle.h>
 #include <ff/spin-lock.hpp>
+#include <ff/mapping_utils.hpp>
 
 namespace ff {
 
@@ -62,10 +63,18 @@ enum { START_TIME=0, STOP_TIME=1, GET_TIME=2 };
  *       - test on Apple
  */
 #if defined(__linux__)
-static inline std::string get_env(std::string const& env_name){
+static char* set_to_str(cpu_set_t& set){
+  size_t n = ff_numCores();
+  char* res = new char[n+1];
+  for(size_t i = 1; i <= n+1; i++){
+      res[n-i] = '0' + CPU_ISSET(i-1, &set);
+  } 
+  res[n] = '\0';
+  return res;
+}
+static char* get_env(std::string const& env_name){
   char* res = std::getenv(env_name.c_str());
-  if(res) return res;
-  return "";
+  return res;
 }
 
 /*!!!----Mehdi-- required for DSRIMANAGER NODE----!!*/

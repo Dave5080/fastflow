@@ -1,0 +1,11 @@
+FF_AFFINITY     |== <SET-LIST> | <FUN>
+SET-LIST        |== <LSET> | <SET-LIST>,<LSET>
+LSET            |== <LABEL>#<SET> | <SET>
+SET             |== [<SUBSET>]:<LEN>:<STRIDE> | [<SUBSET>]:<LEN> | [<SUBSET>] | ![<SUBSET>]
+SUBSET          |== <CORES> | <SUBSET>,<CORES>
+CORES           |== <CPU>:<LEN>:<STRIDE> | <CPU>:<LEN> | <CPU> | !<CPU>
+FUN             |== <SYM>(<LEN>) | <SYM>
+CPU             |== uint x
+LEN             |== uint x > 0
+STRIDE          |== int  x
+

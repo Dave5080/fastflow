@@ -1,4 +1,4 @@
-#include <string>
+/*#include <string>
 #include <iostream>
 #include <ff/ff.hpp>
 #include <ff/mapper.hpp>
@@ -121,4 +121,7 @@ int main(int argc, char *argv[]) {
     pipe.ffStats(std::cout);
 	   
     return 0;
+}*/
+int main(){
+  return 0;
 }

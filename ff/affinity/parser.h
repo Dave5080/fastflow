@@ -1,14 +1,18 @@
+#include <stdlib.h>
 #include <cstdint>
 #include <map>
 #include <optional>
 #include "lexer.h"
 typedef std::map<std::string, std::vector<size_t>> FF_AFF_SETS;
+typedef std::map<std::string, cpu_set_t> FF_AFF_CPU_SETS;
 
 class Parser{
   public:
     Parser(Lexer& lex) noexcept : lex(lex) {}
+    Parser(std::string str) noexcept : lex(str.c_str()){}
 
     std::optional<FF_AFF_SETS> parse() noexcept;
+    std::optional<FF_AFF_CPU_SETS> parse_set() noexcept;
     std::optional<FF_AFF_SETS> parse_func() noexcept;
     std::optional<FF_AFF_SETS> parse_set_list() noexcept;
     std::vector<size_t> parse_cores() noexcept;
@@ -27,11 +31,32 @@ class Parser{
 };
 
 std::optional<FF_AFF_SETS> ff_func_exec(std::string f_name, int arg){
-  return std::nullopt;
+  if(arg < 0)
+    return std::nullopt;
+  std::optional<FF_AFF_SETS> list = std::make_optional<FF_AFF_SETS>();
+  size_t places = 0, p_size = 0;
+  if(f_name == "threads"){
+      places = ff_numCores();
+      p_size = 1;
+  } else if(f_name == "cores"){
+      places = ff_realNumCores();
+      p_size = ff_numCores() / places;
+  } else if(f_name == "sockets"){
+      places = ff_numSockets();
+      places = ff_numCores() / places;
+  } else
+      return std::nullopt;
+  for(size_t i = 0; (arg == 0 && i < places) || (arg > 0 && i <= arg); i++){
+    std::vector<size_t> p;
+    for(size_t j = 0; j < p_size; j++)
+      p.push_back(i*p_size + j);
+    (*list)[std::to_string(i)] = p;
+  }
+  return list;
 } 
 
 std::optional<FF_AFF_SETS> ff_func_exec(std::string fname){
-  return std::nullopt;
+  return ff_func_exec(fname, 0);
 }
 
 std::optional<FF_AFF_SETS> Parser::parse() noexcept {
@@ -171,4 +196,18 @@ std::vector<size_t> Parser::parse_cores() noexcept {
   return {};
  }while(true);
  return {};
+}
+
+std::optional<FF_AFF_CPU_SETS> Parser::parse_set() noexcept {
+  auto res = parse();
+  if(!res) return std::nullopt;
+  FF_AFF_CPU_SETS result;
+  for(auto pair : *res){
+    cpu_set_t tmp;
+    CPU_ZERO(&tmp);
+    for(auto cpu : pair.second)
+      CPU_SET(cpu, &tmp);
+    result[pair.first] = tmp;
+  }
+  return result;
 }

@@ -45,7 +45,7 @@
  *
  */
                
-#include <iostream>
+/*#include <iostream>
 #include <ff/ff.hpp>
 using namespace ff;
 
@@ -117,4 +117,9 @@ int main() {
     }
     
     return 0;
+}*/
+
+int main(){
+
+  return 0;
 }

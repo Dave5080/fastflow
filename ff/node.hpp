@@ -118,43 +118,6 @@ struct OptLevel2: OptLevel {
 static std::atomic_ulong   internal_threadCounter{0};
 static std::atomic_ulong   internal_threadCounter_noBarrier{MAX_NUM_THREADS};
     
-// TODO: Should be rewritten in terms of mapping_utils.hpp 
-#if defined(HAVE_PTHREAD_SETAFFINITY_NP) && !defined(NO_DEFAULT_MAPPING)
-
-    /*
-     *
-     * \brief Initialize thread affinity 
-     * It initializes thread affinity i.e. which cpu the thread should be
-     * assigned.
-     *
-     * \note Linux-specific code
-     *
-     * \param attr is the pthread attribute
-     * \param cpuID is the identifier the core
-     * \return -2  if error, the cpu identifier if successful
-     */
-static inline int init_thread_affinity(pthread_attr_t*attr, int cpuId) {
-    // This is linux-specific code
-    cpu_set_t cpuset;    
-    CPU_ZERO(&cpuset);
-
-    int id;
-    if (cpuId<0) {
-        id = threadMapper::instance()->getCoreId();
-        CPU_SET (id, &cpuset);
-    } else  {
-        id = cpuId;
-        CPU_SET (cpuId, &cpuset);
-    }
-
-    if (pthread_attr_setaffinity_np (attr, sizeof(cpuset), &cpuset)<0) {
-        perror("pthread_attr_setaffinity_np");
-        return -2;
-    }
-    return id;    
-}
-#elif !defined(HAVE_PTHREAD_SETAFFINITY_NP) && !defined(NO_DEFAULT_MAPPING)
-
 /*
  * \brief Initializes thread affinity
  *
@@ -163,25 +126,14 @@ static inline int init_thread_affinity(pthread_attr_t*attr, int cpuId) {
  *
  * \return always return -1 because no thread mapping is done
  */
-static inline int init_thread_affinity(pthread_attr_t*,int) {
-    // Ensure that the threadMapper constructor is called
-    threadMapper::instance().setMappingSet(threadMapper.instance().get_aff_it().next()->first);
-    return -1;
+static inline std::optional<cpu_set_t> init_thread_affinity(pthread_attr_t* attr, int cpuId) {
+    cpu_set_t set = threadMapper::instance()->next();
+    if(pthread_attr_setaffinity_np(attr,sizeof(set), &set) < 0){
+      
+      return std::nullopt;
+    }
+    return std::make_optional<cpu_set_t>(set);
 }
-#else
-/*
- * \brief Initializes thread affinity
- *
- * It initializes thread affinity i.e. it defines to which core ths thread
- * should be assigned.
- *
- * \return always return -1 because no thread mapping is done
- */
-static inline int init_thread_affinity(pthread_attr_t*,int) {
-    // Do nothing
-    return -1;
-}
-#endif /* HAVE_PTHREAD_SETAFFINITY_NP */
 
 
 // forward decl
@@ -344,8 +296,11 @@ public:
         }
 
         int CPUId = -1;
-        if (default_mapping)
-            init_thread_affinity(attr, cpuId);
+        if (default_mapping){
+            auto o_set = init_thread_affinity(attr, cpuId);
+            if(!o_set) return -1;
+            set = *o_set;
+        }
         if (CPUId==-2) return -2;
 
         if (barrier)
@@ -429,6 +384,7 @@ public:
 
     inline size_t getTid() const { return tid; }
     inline size_t getOSThreadId() const { return threadid; }
+    inline cpu_set_t get_affinity_set() { return set; }
 
 protected:
     size_t          tid;                /// unique logical id of the thread
@@ -447,10 +403,15 @@ private:
     pthread_cond_t  cond;
     pthread_cond_t  cond_frozen;
     int             old_cancelstate;
+    cpu_set_t       set;
 };
     
 static void * proxy_thread_routine(void * arg) {
     ff_thread & obj = *(ff_thread *)arg;
+    if(ff::get_env("FF_AFF_DEBUG")){
+        cpu_set_t set = obj.get_affinity_set();
+        std::cout << "AFF_SET[" << ff_getThreadID() << "]: " << ff::set_to_str(set) << std::endl;
+    }
     obj.thread_routine();
     pthread_exit(NULL);
     return NULL;
@@ -1074,12 +1035,12 @@ public:
      *
      * \param cpuID is the ID of the CPU to which the thread will be pinned.
      */
-    virtual void  setAffinity(int cpuID) { 
+    /*virtual void  setAffinity(int cpuID) { 
         if (cpuID<0 || !threadMapper::instance()->checkCPUId(cpuID) ) {
             error("setAffinity, invalid cpuID\n");
         }
         CPUId=cpuID;
-    }
+    }*/
 
     virtual void set_barrier(BARRIER_T * const b) {
         barrier = b;

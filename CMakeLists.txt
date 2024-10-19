@@ -19,9 +19,9 @@ RelWithDebInfo MinSizeRel.")
 ENDIF()
 
 
+cmake_minimum_required( VERSION 3.30 )
 project( mc-fastflow )
 
-cmake_minimum_required( VERSION 2.8 )
 
 SET( CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake.modules )
 FILE (COPY ${PROJECT_SOURCE_DIR}/cmake.modules/templates/ffconfig.h DESTINATION ${PROJECT_SOURCE_DIR}/cmake.modules/)
@@ -83,28 +83,8 @@ endif (CMAKE_SYSTEM_NAME MATCHES "Windows")
 ADD_DEFINITIONS(-DUSE_CMAKE_CONFIG)
 
 find_package(Threads)
-if (NOT(CMAKE_HAVE_PTHREAD_H))
-    if (CMAKE_SYSTEM_NAME MATCHES "Windows")
-        ADD_DEFINITIONS(-D_FF_SYSTEM_HAVE_WIN_PTHREAD)
-        MESSAGE( STATUS "Using FF Pthread minport")
-        set(FFHEADERS_PLAT
-        ${FF}/platforms/pthread_minport_windows.h
-        ${FF}/platforms/stdint.h)
-        if (${CMAKE_SYSTEM} MATCHES Windows-5.1)
-            ADD_DEFINITIONS(-D_FF_WIN_XP)
-            MESSAGE( STATUS ${CMAKE_SYSTEM} " system: using CondVar emulation")
-        endif (${CMAKE_SYSTEM} MATCHES Windows-5.1)
-    else (CMAKE_SYSTEM_NAME MATCHES "Windows")
-        MESSAGE( FATAL_ERROR "Cannot find Pthreads")
-    endif  (CMAKE_SYSTEM_NAME MATCHES "Windows")
-endif (NOT(CMAKE_HAVE_PTHREAD_H))
 
-if (NOT(CMAKE_SYSTEM_NAME MATCHES "Windows"))
-    if(CMAKE_HAVE_PTHREAD_H)
-        MESSAGE( STATUS "Linking to pthreads")
-        SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lpthread")
-    endif(CMAKE_HAVE_PTHREAD_H)
-endif  (NOT(CMAKE_SYSTEM_NAME MATCHES "Windows"))
+SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lpthread")
 
 if (CMAKE_SYSTEM_NAME MATCHES "Windows")
 # Avoid security in run time support and generate inlined intrinsics
@@ -126,6 +106,8 @@ CHECK_INCLUDE_FILE("stdint.h"  HAVE_STDINT_H)
 if (NOT(HAVE_STDINT_H))
     INCLUDE_DIRECTORIES(${FF}/platforms/)
 endif (NOT(HAVE_STDINT_H))
+
+INCLUDE_DIRECTORIES(${FF}/affinity/)
 
 #find_path(STDINT_INCLUDE_DIR stdint.h
 #   HINTS /usr/include CMAKE_INCLUDE_PATH CMAKE_FRAMEWORK_PATH
@@ -199,6 +181,10 @@ set(FFHEADERS_D
     ${FF}/d/zmqImpl.hpp
     ${FF}/d/zmqTransport.hpp)
 
+set(FFAFFINITY_D
+    ${FF}/affinity/parser.h
+    ${FF}/affinity/lexer.h)
+
 if (CMAKE_SYSTEM_PROCESSOR MATCHES "ppc")
     MESSAGE( WARNING "Pinning on Power8 currently is not default" )
     ADD_DEFINITIONS(-DNO_DEFAULT_MAPPING)
@@ -238,6 +224,7 @@ add_custom_target( uninstall
 install( FILES ${FFHEADERS} DESTINATION include/ff/ )
 install( FILES ${FFHEADERS_PLAT} DESTINATION include/ff/platforms )
 install( FILES ${FFHEADERS_D} DESTINATION include/ff/d )
+install ( FILES ${FFAFFINITY_D} DESTINATION include/ff/affinity)
 
 if( BUILD_EXAMPLES )
 #    enable_testing()
