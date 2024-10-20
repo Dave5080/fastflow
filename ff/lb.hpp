@@ -1180,7 +1180,7 @@ public:
         ff_loadbalancer::dryrun();        
         running = (nw<=0)?(feedbackid>0?feedbackid:workers.size()):nw;
         
-        if (this->spawn(filter?filter->getCPUId():-1) == -2) {
+        if (this->spawn(filter?filter->get_aff_tag():std::nullopt) == -2) {
             error("LB, spawning LB thread\n");
             running = -1;
             return -1;

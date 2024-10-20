@@ -126,10 +126,10 @@ static std::atomic_ulong   internal_threadCounter_noBarrier{MAX_NUM_THREADS};
  *
  * \return always return -1 because no thread mapping is done
  */
-static inline std::optional<cpu_set_t> init_thread_affinity(pthread_attr_t* attr, int cpuId) {
-    cpu_set_t set = threadMapper::instance()->next();
+static inline std::optional<cpu_set_t> init_thread_affinity(pthread_attr_t* attr, std::optional<std::string> tag) {
+    
+    cpu_set_t set = threadMapper::instance()->next(tag);
     if(pthread_attr_setaffinity_np(attr,sizeof(set), &set) < 0){
-      
       return std::nullopt;
     }
     return std::make_optional<cpu_set_t>(set);
@@ -283,7 +283,7 @@ public:
     
     virtual int run(bool=false) { return spawn(); }
     
-    virtual int spawn(int cpuId=-1) {
+    virtual int spawn(std::optional<std::string> o_tag = std::nullopt) {
         if (spawned) return -1;
 
         if ((attr = (pthread_attr_t*)malloc(sizeof(pthread_attr_t))) == NULL) {
@@ -296,8 +296,8 @@ public:
         }
 
         int CPUId = -1;
-        if (default_mapping){
-            auto o_set = init_thread_affinity(attr, cpuId);
+        if (default_mapping){          
+            auto o_set = init_thread_affinity(attr, o_tag);
             if(!o_set) return -1;
             set = *o_set;
         }
@@ -472,6 +472,7 @@ private:
     friend class ff_comb;
     friend struct internal_mo_transformer;
     friend struct internal_mi_transformer;
+    std::optional<std::string> aff_arg;
 
 #ifdef DFF_ENABLED
     friend class dGroups;
@@ -1018,6 +1019,13 @@ public:
         return true;
     }
 
+    virtual std::optional<std::string> get_aff_tag(){
+      return aff_arg;
+    }
+    virtual void set_aff_tag(std::string str){
+      aff_arg = std::make_optional<std::string>(std::move(str));
+    }
+
     
 #if defined(FF_TASK_CALLBACK)
     virtual void callbackIn(void * =NULL)  { }
@@ -1457,14 +1465,6 @@ private:
         }
         
         int svc_init() {
-#if !defined(HAVE_PTHREAD_SETAFFINITY_NP) && !defined(NO_DEFAULT_MAPPING)
-            if (filter->default_mapping) {
-                int cpuId = filter->getCPUId();
-                if (ff_mapThreadToCpu((cpuId<0) ? (cpuId=threadMapper::instance()->getCoreId(tid)) : cpuId)!=0)
-                    error("Cannot map thread %d to CPU %d, mask is %u,  size is %u,  going on...\n",tid, (cpuId<0) ? threadMapper::instance()->getCoreId(tid) : cpuId, threadMapper::instance()->getMask(), threadMapper::instance()->getCListSize());            
-                filter->setCPUId(cpuId);
-            }
-#endif
             gettimeofday(&filter->tstart,NULL);
             return filter->svc_init();
         }
@@ -1475,7 +1475,7 @@ private:
         }
         
         int run(bool=false) { 
-            int CPUId = ff_thread::spawn(filter->getCPUId());             
+            int CPUId = ff_thread::spawn(filter->get_aff_tag());             
             filter->setCPUId(CPUId);
             return (CPUId==-2)?-1:0;
         }

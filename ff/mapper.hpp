@@ -1,13 +1,5 @@
 /* -*- Mode: C++; tab-width: 4; c-basic-offset: 4; indent-tabs-mode: nil -*- */
 
-/*!
- *  \link
- *  \file mapper.hpp
- *  \ingroup shared_memory_fastflow
- *
- *  \brief This file contains the thread mapper definition used in FastFlow
- */
-
 #ifndef __THREAD_MAPPER_HPP_
 #define __THREAD_MAPPER_HPP_
 
@@ -66,32 +58,34 @@ namespace ff {
           def_set["all"] = all_set;
           ff_cpu_set = std::make_optional<FF_AFF_CPU_SETS>(def_set);
         }
-        for(const auto& [k, v] : *ff_cpu_set)
-          std::cout << set_to_str((*ff_cpu_set)[k]) << std::endl << std::endl;
       }
 
       std::optional<FF_AFF_CPU_SETS> ff_cpu_set;
-      std::optional<std::function<cpu_set_t(std::optional<FF_AFF_CPU_SETS>)>> scheduler = std::nullopt;
-      cpu_set_t default_scheduler();
+      std::optional<std::function<cpu_set_t(std::optional<FF_AFF_CPU_SETS>, std::optional<std::string>&)> > scheduler = std::nullopt;
+      cpu_set_t default_scheduler(std::optional<std::string>& node);
       static threadMapper *thm;
     public:
       static threadMapper* instance();
-      cpu_set_t next();
+      cpu_set_t next(std::optional<std::string>& a);
   };
 
   threadMapper* threadMapper::thm = nullptr;
-
-  cpu_set_t threadMapper::default_scheduler(){
+  
+  cpu_set_t threadMapper::default_scheduler(std::optional<std::string>& tag){
     cpu_set_t res;
     if(!ff_cpu_set){
       CPU_ZERO(&res);
       return res;
     }
-    static auto it = ff_cpu_set->begin();
-    if(it == ff_cpu_set->end()) it = ff_cpu_set->begin();
-    cpu_set_t fres = it->second;
-    it++;
-    return fres;
+    if(!tag){
+      static auto it = ff_cpu_set->begin();
+      if(it == ff_cpu_set->end()) it = ff_cpu_set->begin();
+      cpu_set_t fres = it->second;
+      it++;
+    } else {
+      res = (*ff_cpu_set)[*tag];
+    }
+    return res;
   }
 
 
@@ -100,9 +94,9 @@ namespace ff {
       thm = new threadMapper();
     return thm;
   }
-  cpu_set_t threadMapper::next(){
-    if(scheduler) return (*scheduler)(ff_cpu_set);
-    return default_scheduler();
+  cpu_set_t threadMapper::next(std::optional<std::string>& tag){
+    if(scheduler) return (*scheduler)(ff_cpu_set, tag);
+    return default_scheduler(tag);
   }
 };
 #endif /* __THREAD_MAPPER_HPP_ */
