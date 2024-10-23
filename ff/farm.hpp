@@ -2111,6 +2111,13 @@ protected:
         return 0;
     }
 
+    virtual void set_aff_tag(std::string label){
+      if(collector) collector->set_aff_tag(label);
+      if(emitter) emitter->set_aff_tag(label);
+      for(auto w : workers)
+        if(w) w->set_aff_tag(label);
+    }
+
 protected:
     bool has_input_channel; // for the accelerator mode
     bool collector_removed;

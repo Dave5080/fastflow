@@ -830,6 +830,13 @@ protected:
             workers2[i]->set_output_blocking(m,c, canoverwrite);
         }
     }
+
+    virtual void set_aff_tag(std::string label){
+      for(auto w : workers1)
+        if(w) w->set_aff_tag(label);
+      for(auto w : workers2)
+        if(w) w->set_aff_tag(label);
+    }
    
 protected:
     bool workers1_cleanup=false;

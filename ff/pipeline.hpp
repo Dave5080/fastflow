@@ -1557,6 +1557,10 @@ public:
         return true; 
     }
 #endif
+    virtual void set_aff_tag(std::string label){
+      for(auto w : nodes_list)
+        if(w) w->set_aff_tag(label);
+    }
     
 protected:
 
