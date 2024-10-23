@@ -147,18 +147,26 @@ int main(int argc, char * argv[]) {
 
 #if 1 // first version using cleanup_nodes 
     ff_pipeline pipe;
-    pipe.add_stage(new Stage1(streamlen));
+    Stage1* s1 = new Stage1(streamlen);
+    s1->set_aff_tag("BLUE");
+    pipe.add_stage(s1);
 
     ff_pipeline *pipe2=new ff_pipeline;
     pipe2->cleanup_nodes();  // cleanup at exit
-    pipe2->add_stage(new Stage2_1);
-    pipe2->add_stage(new Stage2_2);
+    Stage2_1* s21 = new Stage2_1;
+    s21->set_aff_tag("RED");
+    Stage2_2* s22 = new Stage2_2;
+    s22->set_aff_tag("RED");
+    pipe2->add_stage(s21);
+    pipe2->add_stage(s22);
 
     // add the farm module as a second pipeline stage
     pipe.add_stage(pipe2);
 
     // add last stage to the main pipeline
-    pipe.add_stage(new Stage3);
+    Stage3* s3 = new Stage3;
+    s3->set_aff_tag("YELLOW");
+    pipe.add_stage(s3);
 
     if (pipe.run_and_wait_end()<0) {
         error("running pipeline\n");

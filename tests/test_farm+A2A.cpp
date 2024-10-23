@@ -101,8 +101,10 @@ int main() {
     // preparing the master-worker farm
     Scheduler sched;
     std::vector<ff_node*> W;
-    for(int i=0;i<nworkers;++i) 
+    for(int i=0;i<nworkers;++i){
         W.push_back(new Worker);
+        W[i]->set_aff_tag("BLUE");
+    }
     ff_farm farm(W,&sched);
     farm.remove_collector();
     farm.cleanup_workers();
@@ -113,8 +115,12 @@ int main() {
     std::vector<ff_node*> W1;
     for(int i=0;i<nworkers;++i) {
         ff_pipeline *pipe = new ff_pipeline;
-        pipe->add_stage(new First,  true);
-        pipe->add_stage(new Second, true);
+        First* f = new First;
+        Second* s = new Second;
+        f->set_aff_tag("RED");
+        s->set_aff_tag("YELLOW");
+        pipe->add_stage(f,  true);
+        pipe->add_stage(s, true);
         W1.push_back(pipe);
     }
     a2a.add_firstset(W1, 0, true);

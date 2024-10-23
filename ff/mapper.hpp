@@ -47,7 +47,8 @@ namespace ff {
       threadMapper() { 
         char* env = ff::get_env("FF_AFFINITY");
         if(env){
-          Parser p(env);
+          Lexer l(env);
+;         Parser p(l);
           ff_cpu_set = p.parse_set();
         } else {
           cpu_set_t all_set;
@@ -62,6 +63,7 @@ namespace ff {
 
       std::optional<FF_AFF_CPU_SETS> ff_cpu_set;
       std::optional<std::function<cpu_set_t(std::optional<FF_AFF_CPU_SETS>, std::optional<std::string>&)> > scheduler = std::nullopt;
+      void set_scheduler(std::function<cpu_set_t(std::optional<FF_AFF_CPU_SETS>, std::optional<std::string>&)> sched);
       cpu_set_t default_scheduler(std::optional<std::string>& node);
       static threadMapper *thm;
     public:
@@ -80,7 +82,7 @@ namespace ff {
     if(!tag){
       static auto it = ff_cpu_set->begin();
       if(it == ff_cpu_set->end()) it = ff_cpu_set->begin();
-      cpu_set_t fres = it->second;
+      res = it->second;
       it++;
     } else {
       res = (*ff_cpu_set)[*tag];
@@ -96,7 +98,15 @@ namespace ff {
   }
   cpu_set_t threadMapper::next(std::optional<std::string>& tag){
     if(scheduler) return (*scheduler)(ff_cpu_set, tag);
-    return default_scheduler(tag);
+    auto res = default_scheduler(tag);
+    if(ff_cpu_set){
+      auto s = *ff_cpu_set;
+
+    }
+    return res;
+  }
+  void threadMapper::set_scheduler(std::function<cpu_set_t(std::optional<FF_AFF_CPU_SETS>, std::optional<std::string>&)> sched){
+    scheduler = std::make_optional<std::function<cpu_set_t(std::optional<FF_AFF_CPU_SETS>, std::optional<std::string>&)>>(sched); 
   }
 };
 #endif /* __THREAD_MAPPER_HPP_ */

@@ -62,7 +62,7 @@ std::optional<FF_AFF_SETS> ff_func_exec(std::string fname){
 std::optional<FF_AFF_SETS> Parser::parse() noexcept {
   Token tok = lex.peek();
   if(tok.is(Token::Type::NAME)) return parse_func();
-  if(tok.is_one_of(Token::Type::HASH, Token::Type::LEFT_SB, Token::Type::NOT)) return parse_set_list();
+  if(tok.is(Token::Type::HASH) || tok.is(Token::Type::LEFT_SB) || tok.is(Token::Type::NOT)) return parse_set_list();
   return std::nullopt;
 }
 
@@ -98,7 +98,7 @@ std::optional<FF_AFF_SETS> Parser::parse_set_list() noexcept {
       if(lab_tok.is_not(Token::Type::NAME)) return std::nullopt;
       has_label = true;
       label = lab_tok.lexme_string();
-      if(lex.next().is_not(Token::Type::HASH));
+      if(lex.next().is_not(Token::Type::HASH)) return std::nullopt;
       tok = lex.next();
     }
     if(tok.is(Token::Type::NOT)){
@@ -191,7 +191,7 @@ std::vector<size_t> Parser::parse_cores() noexcept {
       result.push_back(cpu + stride*i);
     }
 
-  if(tok.is(Token::Type::COMMA)) continue;
+  if(tok.is(Token::Type::COMMA)) {continue;};
   if(tok.is(Token::Type::RIGHT_SB)) return result;
   return {};
  }while(true);
@@ -201,12 +201,14 @@ std::vector<size_t> Parser::parse_cores() noexcept {
 std::optional<FF_AFF_CPU_SETS> Parser::parse_set() noexcept {
   auto res = parse();
   if(!res) return std::nullopt;
+
   FF_AFF_CPU_SETS result;
   for(auto pair : *res){
     cpu_set_t tmp;
     CPU_ZERO(&tmp);
-    for(auto cpu : pair.second)
+    for(auto cpu : pair.second){
       CPU_SET(cpu, &tmp);
+    }
     result[pair.first] = tmp;
   }
   return result;

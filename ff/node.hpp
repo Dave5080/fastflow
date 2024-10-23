@@ -316,6 +316,9 @@ public:
             return -2;
         }
         spawned = true;
+        if(ff::get_env("FF_AFF_DEBUG")){
+            std::cout << "AFF_SET[" << tid << "]: " << ff::set_to_str(set) << std::endl;
+        }
         return CPUId;
     }
      
@@ -338,6 +341,8 @@ public:
             free(attr);
             attr = NULL;
         }
+        
+    
         spawned=false;
         return r;
     }
@@ -408,10 +413,6 @@ private:
     
 static void * proxy_thread_routine(void * arg) {
     ff_thread & obj = *(ff_thread *)arg;
-    if(ff::get_env("FF_AFF_DEBUG")){
-        cpu_set_t set = obj.get_affinity_set();
-        std::cout << "AFF_SET[" << ff_getThreadID() << "]: " << ff::set_to_str(set) << std::endl;
-    }
     obj.thread_routine();
     pthread_exit(NULL);
     return NULL;

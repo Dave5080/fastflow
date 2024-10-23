@@ -52,6 +52,7 @@ class Worker1: public ff_node {
 public:
     void * svc(void * task) {
         std::cout << "Worker1 id= " << get_my_id() << " got task " << *(int*)task << "\n";
+        this->set_aff_tag("BLUE");
         return task; 
     }
 };
@@ -60,6 +61,7 @@ class Worker2: public ff_node {
 public:
     void * svc(void * task) {
         std::cout << "Worker2 id= " << get_my_id() << " got task " << *(int*)task << "\n";
+        this->set_aff_tag("RED");
         return task; 
     }
 };
@@ -68,6 +70,7 @@ class Worker3: public ff_node {
 public:
     void * svc(void * task) {
         std::cout << "Worker3 id= " << get_my_id() << " got task " << *(int*)task << "\n";
+        this->set_aff_tag("YELLOW");
         return task; 
     }
 };
