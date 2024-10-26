@@ -17,9 +17,8 @@ class Token {
       COLON = 6,
       NOT = 7,
       COMMA = 8,
-      HASH = 9,
-      END = 10,
-      ERR = 11,
+      END = 9,
+      ERR = 10,
     };
 
     Token(Type T) noexcept : m_type(T) {}
@@ -62,7 +61,6 @@ class Token {
         case Type::COLON: std::cout << "COLON "; break;
         case Type::NOT: std::cout << "NOT "; break;
         case Type::COMMA: std::cout << "COMMA "; break;
-        case Type::HASH: std::cout << "HASH "; break;
         case Type::END: std::cout << "END "; break;
         default: std::cout << "ERR "; break;
       }
@@ -126,7 +124,6 @@ Token Lexer::next() noexcept {
     case ':': result = atom(Token::Type::COLON); break;
     case '!': result = atom(Token::Type::NOT); break;
     case ',': result = atom(Token::Type::COMMA); break;
-    case '#': result = atom(Token::Type::HASH); break;
   }
   
 //  result.print();
@@ -148,9 +145,11 @@ Token Lexer::peek() noexcept {
 }
 
 std::vector<Token> Lexer::peek(unsigned int k) noexcept {
+  const char* start = m_beg;
   std::vector<Token> t_vec;
-  for(; k < 0; k--)
-    t_vec.push_back(this->peek());
+  for(; k > 0; k--)
+    t_vec.push_back(this->next());
+  m_beg = start;
   return t_vec;
 }
 

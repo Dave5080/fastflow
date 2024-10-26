@@ -61,8 +61,14 @@ std::optional<FF_AFF_SETS> ff_func_exec(std::string fname){
 
 std::optional<FF_AFF_SETS> Parser::parse() noexcept {
   Token tok = lex.peek();
-  if(tok.is(Token::Type::NAME)) return parse_func();
-  if(tok.is(Token::Type::HASH) || tok.is(Token::Type::LEFT_SB) || tok.is(Token::Type::NOT)) return parse_set_list();
+  if(tok.is(Token::Type::NAME)) {
+    auto v = lex.peek(2);
+    if(v[1].is(Token::Type::LEFT_SB))
+      return parse_set_list();
+    else if(v[1].is(Token::Type::LEFT_CB))
+      return parse_func();
+  }
+  if(tok.is(Token::Type::LEFT_SB) || tok.is(Token::Type::NOT)) return parse_set_list();
   return std::nullopt;
 }
 
@@ -93,12 +99,9 @@ std::optional<FF_AFF_SETS> Parser::parse_set_list() noexcept {
     uint16_t len = 1; 
     int stride = 1;
     std::string label = "\0";
-    if(tok.is(Token::Type::HASH)){
-      Token lab_tok = lex.next();
-      if(lab_tok.is_not(Token::Type::NAME)) return std::nullopt;
+    if(tok.is(Token::Type::NAME)){
       has_label = true;
-      label = lab_tok.lexme_string();
-      if(lex.next().is_not(Token::Type::HASH)) return std::nullopt;
+      label = tok.lexme_string();
       tok = lex.next();
     }
     if(tok.is(Token::Type::NOT)){

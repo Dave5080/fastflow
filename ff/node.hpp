@@ -127,7 +127,6 @@ static std::atomic_ulong   internal_threadCounter_noBarrier{MAX_NUM_THREADS};
  * \return always return -1 because no thread mapping is done
  */
 static inline std::optional<cpu_set_t> init_thread_affinity(pthread_attr_t* attr, std::optional<std::string> tag) {
-    
     cpu_set_t set = threadMapper::instance()->next(tag);
     if(pthread_attr_setaffinity_np(attr,sizeof(set), &set) < 0){
       return std::nullopt;
@@ -281,11 +280,12 @@ public:
     virtual void no_mapping() { default_mapping=false; }
     bool get_mapping() const { return default_mapping; }
     
-    virtual int run(bool=false) { return spawn(); }
+    virtual int run(std::optional<std::string> tag, bool b=false) { 
+      return spawn(tag); 
+    }
     
     virtual int spawn(std::optional<std::string> o_tag = std::nullopt) {
         if (spawned) return -1;
-
         if ((attr = (pthread_attr_t*)malloc(sizeof(pthread_attr_t))) == NULL) {
             error("spawn: pthread can not be created, malloc failed\n");
             return -1;
@@ -294,15 +294,11 @@ public:
                 perror("pthread_attr_init: pthread can not be created.");
                 return -1;
         }
-
         int CPUId = -1;
-        if (default_mapping){          
-            auto o_set = init_thread_affinity(attr, o_tag);
-            if(!o_set) return -1;
-            set = *o_set;
-        }
-        if (CPUId==-2) return -2;
-
+        auto o_set = init_thread_affinity(attr, o_tag);
+        if(!o_set) return -1;
+        set = *o_set;
+        
         if (barrier)
             tid= internal_threadCounter.fetch_add(1);
         else
@@ -319,7 +315,7 @@ public:
         if(ff::get_env("FF_AFF_DEBUG")){
             std::cout << "AFF_SET[" << tid << "]: " << ff::set_to_str(set) << std::endl;
         }
-        return CPUId;
+        return 1;
     }
      
     virtual int wait() {
@@ -761,7 +757,7 @@ protected:
         if (thread) delete reinterpret_cast<thWorker*>(thread);
         thread = new thWorker(this,neos);
         if (!thread) return -1;
-        return thread->run();
+        return thread->run(this->get_aff_tag());
     }
 
     #ifdef DFF_ENABLED
@@ -780,7 +776,7 @@ protected:
         thread = new thWorker(this,neos);
         if (!thread) return 0;
         freeze();
-        return thread->run();
+        return thread->run(this->get_aff_tag());
     }
 
     /**

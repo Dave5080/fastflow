@@ -73,7 +73,7 @@ namespace ff {
 
   threadMapper* threadMapper::thm = nullptr;
   
-  cpu_set_t threadMapper::default_scheduler(std::optional<std::string>& tag){
+  cpu_set_t threadMapper::default_scheduler(std::optional<std::string>& tag){ 
     cpu_set_t res;
     if(!ff_cpu_set){
       CPU_ZERO(&res);

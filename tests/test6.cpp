@@ -45,14 +45,12 @@
 using namespace ff;
 
 static ff_allocator ffalloc;
-enum { MIN_TASK_SIZE=32, MAX_TASK_SIZE=16384 };
-
+enum { MIN_TASK_SIZE=32, MAX_TASK_SIZE=4096};
 
 class Worker1: public ff_node {
 public:
     void * svc(void * task) {
-        std::cout << "Worker1 id= " << get_my_id() << " got task " << *(int*)task << "\n";
-        this->set_aff_tag("BLUE");
+        //std::cout << "Worker1 id= " << get_my_id() << " got task " << *(int*)task << "\n";
         return task; 
     }
 };
@@ -60,8 +58,7 @@ public:
 class Worker2: public ff_node {
 public:
     void * svc(void * task) {
-        std::cout << "Worker2 id= " << get_my_id() << " got task " << *(int*)task << "\n";
-        this->set_aff_tag("RED");
+        //std::cout << "Worker2 id= " << get_my_id() << " got task " << *(int*)task << "\n";
         return task; 
     }
 };
@@ -69,8 +66,7 @@ public:
 class Worker3: public ff_node {
 public:
     void * svc(void * task) {
-        std::cout << "Worker3 id= " << get_my_id() << " got task " << *(int*)task << "\n";
-        this->set_aff_tag("YELLOW");
+        //std::cout << "Worker3 id= " << get_my_id() << " got task " << *(int*)task << "\n";
         return task; 
     }
 };
@@ -93,6 +89,7 @@ public:
     }
 
     void * svc(void *) {
+
         size_t size = random() % MAX_TASK_SIZE;
         if (!size) size=MIN_TASK_SIZE;
         int * task = (int*)ffalloc.malloc(size);
@@ -117,7 +114,7 @@ public:
         return 0;
     }
     void * svc(void * task) {
-        std::cout << "Collector got task " << *(int*)task << "\n";
+        //std::cout << "Collector got task " << *(int*)task << "\n";
         ffalloc.free(task);
         return task;
     }
@@ -143,39 +140,22 @@ int main(int argc, char * argv[]) {
 
     Emitter e(streamlen);
     Collector c;
+    e.set_aff_tag("BLUE");
+    c.set_aff_tag("BLUE");
     farm.add_emitter(&e);
     farm.add_collector(&c);
     
-
-    ff_farm farm1, farm2, farm3;
-    farm1.add_collector(NULL); 
-    farm2.add_collector(NULL); 
-    farm3.add_collector(NULL); 
-
     std::vector<ff_node *> w;
-    w.push_back(new Worker1);
-    w.push_back(new Worker1);
-    farm1.add_workers(w);
-
-    w.clear();
-
-    w.push_back(new Worker2);
-    w.push_back(new Worker2);
-    w.push_back(new Worker2);
-    farm2.add_workers(w);
-
-    w.clear();
-
-    w.push_back(new Worker3);
-    farm3.add_workers(w);
-
-    w.clear();
-
-    w.push_back(&farm1);
-    w.push_back(&farm2);
-    w.push_back(&farm3);
+    Worker1 *w1 = new Worker1;
+    Worker2 *w2 = new Worker2;
+    Worker3 *w3 = new Worker3;
+    w1->set_aff_tag("RED");
+    w2->set_aff_tag("RED");
+    w3->set_aff_tag("RED");
+    w.push_back(w1);
+    w.push_back(w2);
+    w.push_back(w3);
     farm.add_workers(w);
-    
     if (farm.run_and_wait_end()<0) {
         error("running pipeline\n");
         return -1;
