@@ -43,10 +43,11 @@ std::optional<FF_AFF_SETS> ff_func_exec(std::string f_name, int arg){
       p_size = ff_numCores() / places;
   } else if(f_name == "sockets"){
       places = ff_numSockets();
-      places = ff_numCores() / places;
+      p_size = ff_numCores() / places;
   } else
       return std::nullopt;
-  for(size_t i = 0; (arg == 0 && i < places) || (arg > 0 && i <= arg); i++){
+  //if(arg > places) return std::nullopt;
+  for(size_t i = 0; (arg == 0 && i < places) || (arg > 0 && i < arg); i++){
     std::vector<size_t> p;
     for(size_t j = 0; j < p_size; j++)
       p.push_back(i*p_size + j);
@@ -65,7 +66,7 @@ std::optional<FF_AFF_SETS> Parser::parse() noexcept {
     auto v = lex.peek(2);
     if(v[1].is(Token::Type::LEFT_SB))
       return parse_set_list();
-    else if(v[1].is(Token::Type::LEFT_CB))
+    else if(v[1].is(Token::Type::LEFT_CB) || v[1].is(Token::Type::END) || v[1].is(Token::Type::COMMA))
       return parse_func();
   }
   if(tok.is(Token::Type::LEFT_SB) || tok.is(Token::Type::NOT)) return parse_set_list();

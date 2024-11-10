@@ -126,7 +126,7 @@ Token Lexer::next() noexcept {
     case ',': result = atom(Token::Type::COMMA); break;
   }
   
-//  result.print();
+  result.print();
   return result;
 }
 

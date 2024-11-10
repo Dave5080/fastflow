@@ -140,8 +140,8 @@ int main(int argc, char * argv[]) {
 
     Emitter e(streamlen);
     Collector c;
-    e.set_aff_tag("BLUE");
-    c.set_aff_tag("BLUE");
+    //e.set_aff_tag("BLUE");
+    //c.set_aff_tag("BLUE");
     farm.add_emitter(&e);
     farm.add_collector(&c);
     
@@ -149,9 +149,9 @@ int main(int argc, char * argv[]) {
     Worker1 *w1 = new Worker1;
     Worker2 *w2 = new Worker2;
     Worker3 *w3 = new Worker3;
-    w1->set_aff_tag("RED");
-    w2->set_aff_tag("RED");
-    w3->set_aff_tag("RED");
+    //w1->set_aff_tag("RED");
+    //w2->set_aff_tag("RED");
+    //w3->set_aff_tag("RED");
     w.push_back(w1);
     w.push_back(w2);
     w.push_back(w3);
